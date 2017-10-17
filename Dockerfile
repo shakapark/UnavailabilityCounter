@@ -6,4 +6,5 @@ RUN go-wrapper install    # "go install -v ./..."
 EXPOSE 9143
 RUN mkdir /data
 RUN mkdir /config
+RUN mv comptindispo.yml /config/ 
 CMD ["go-wrapper", "run"] # ["app"]
