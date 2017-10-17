@@ -70,7 +70,7 @@ func getGroupNames(c *Config){
 		GroupNames = tmp
 		err := os.Mkdir("/data/"+name, 0777)
 		if err != nil {
-			log.Infoln("Error:", err)
+			log.Infoln("Msg:", err)
 		}
 	}
 }

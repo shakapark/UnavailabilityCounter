@@ -33,6 +33,30 @@ type Metric struct {
 	Instance string `json:"instance"`
 }
 
+func getPercent(s int64,t int64) float64 {
+	var result float64
+	result = float64(s)*100/float64(t)
+	result = 100-result
+	return result
+}
+
+func toString(tab []string) string {
+	var r string
+	for _, s := range tab {
+		r += s+"|"
+	}
+	return r
+}
+
+func contains(t string, tab []string) bool {
+	for _, tmp := range tab {
+		if tmp == t {
+			return true
+		}
+	}
+	return false
+}
+
 //Add Timestamp/Value to a Tab
 func addValue(a []model.SamplePair, n model.Time, v model.SampleValue) []model.SamplePair{	
 	var t = make([]model.SamplePair,len(a)+1)
@@ -98,14 +122,22 @@ func queryTimeByMonth(year int, month string, instance string, start int64, end 
 }
 
 func queryTime(start int64, end int64, step int64, query string, instances []string) sendData {
-	results := make([]Result, len(instances))
-	for i, instance := range instances {
-		var result Result
-		result.Metric = Metric{Name: query, Job: "compteur", Instance: instance}
-		var v []model.SamplePair
-		var sum int64
-		var monthS string
-		var year int
+	results := make([]Result, 1)
+	timeTotal := end-start
+	var result Result
+	result.Metric = Metric{Name: query, Job: "compteur", Instance: toString(instances)}
+	var v []model.SamplePair
+	var sum int64 = 0
+	var p float64
+	var monthS string
+	var year int
+		
+		
+	for _, instance := range instances {
+		if !(contains(instance, GroupNames)) {
+			log.Infoln("Error : Unknown instance ", instance)
+			break
+		}
 		
 		for start <= end {
 			year = time.Unix(start, 0).Year()
@@ -116,7 +148,8 @@ func queryTime(start int64, end int64, step int64, query string, instances []str
 				log.Infoln("err : ", err)
 			}
 			sum += s
-			v = addValue(v, model.TimeFromUnix(start), model.SampleValue(sum))
+			p = getPercent(sum, timeTotal)
+			v = addValue(v, model.TimeFromUnix(start), model.SampleValue(p))
 			
 			if monthS != "now" {
 				for time.Unix(start, 0).Month().String() == monthS {
@@ -126,18 +159,20 @@ func queryTime(start int64, end int64, step int64, query string, instances []str
 				end=0
 			}
 		}
-		
-		result.Values = v
-		
-		results[i] = result
 	}
 	
+	result.Values = v
+	results[0] = result
 	return sendData{Status: "loading", Data: Data{ResultType: "matrix", Results: results}}
 }
 
 func queryCounter(start int64, end int64, step int64, query string, instances []string) sendData {
 	results := make([]Result, len(instances))
 	for i, instance := range instances {
+		if !(contains(instance, GroupNames)) {
+			log.Infoln("Error : Unknown instance ", instance)
+			break
+		}
 		var result Result
 		var path string
 		path = "/data/"+instance+"/"
@@ -193,6 +228,9 @@ func queryCounter(start int64, end int64, step int64, query string, instances []
 					start += step
 				}
 			}
+		}
+		if v == nil {
+			v = addValue(v, model.TimeFromUnix(start), model.SampleValue(0))
 		}
 		result.Values = v
 		
