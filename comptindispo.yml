@@ -1,0 +1,4 @@
+count:
+  groupName:
+    targets: ["ip:port","url","etc"]
+    kind: "tcp"|"http"
