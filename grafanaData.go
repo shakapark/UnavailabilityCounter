@@ -132,33 +132,39 @@ func queryTime(start int64, end int64, step int64, query string, instances []str
 	var monthS string
 	var year int
 		
+	for start <= end {
+		log.Infoln("Debug : start = ", start)
+		year = time.Unix(start, 0).Year()
+		monthS = time.Unix(start, 0).Month().String()
 		
-	for _, instance := range instances {
-		if !(contains(instance, GroupNames)) {
-			log.Infoln("Error : Unknown instance ", instance)
-			break
-		}
-		
-		for start <= end {
-			year = time.Unix(start, 0).Year()
-			monthS = time.Unix(start, 0).Month().String()
-			
-			s, err := queryTimeByMonth(year, monthS, instance, start, end, step)
-			if err != nil {
-				log.Infoln("err : ", err)
+		for _, instance := range instances {
+			if !(contains(instance, GroupNames)) {
+				log.Infoln("Error : Unknown instance ", instance)
+				break
 			}
-			sum += s
-			p = getPercent(sum, timeTotal)
-			v = addValue(v, model.TimeFromUnix(start), model.SampleValue(p))
 			
-			if monthS != "now" {
-				for time.Unix(start, 0).Month().String() == monthS {
-						start += step
+			endTmp := start+step
+			if endTmp >= end {
+				s, err := queryTimeByMonth(year, monthS, instance, start, end, step)
+				if err != nil {
+					log.Infoln("err : ", err)
 				}
+				sum += s
 			}else{
-				end=0
+				s, err := queryTimeByMonth(year, monthS, instance, start, start+step, step)
+				if err != nil {
+					log.Infoln("err : ", err)
+				}
+				sum += s
 			}
+			log.Infoln("Debug : For Instance :", instance, "result = ", sum)
+
 		}
+		
+		p = getPercent(sum, timeTotal)
+		v = addValue(v, model.TimeFromUnix(start), model.SampleValue(p))
+		
+		start+=step
 	}
 	
 	result.Values = v
