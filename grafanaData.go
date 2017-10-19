@@ -133,7 +133,7 @@ func queryTime(start int64, end int64, step int64, query string, instances []str
 	var year int
 		
 	for start <= end {
-		log.Infoln("Debug : start = ", start)
+		
 		year = time.Unix(start, 0).Year()
 		monthS = time.Unix(start, 0).Month().String()
 		
@@ -157,7 +157,7 @@ func queryTime(start int64, end int64, step int64, query string, instances []str
 				}
 				sum += s
 			}
-			log.Infoln("Debug : For Instance :", instance, "result = ", sum)
+			
 
 		}
 		
