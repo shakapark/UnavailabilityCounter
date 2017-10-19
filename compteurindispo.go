@@ -283,18 +283,10 @@ func main() {
 				maintenanceTexte = "Maintenance"
 				log.Infoln("info", "Go to Maintenance")
 				Maintenance = true
-				/*err := smtp.SendMail("IP:PORT", nil, "noreply@cryptopass.fr", []string{"noreply@cryptopass.fr"}, []byte("test ouverture maintenance"))
-				if err != nil {
-					log.Infoln("err", "Can't contact mail server")
-				}*/
 			}else{
 				maintenanceTexte = ""
 				log.Infoln("info", "Go to Normale Mode")
 				Maintenance = false
-				/*err := smtp.SendMail("IP:PORT", nil, "noreply@cryptopass.fr", []string{"noreply@cryptopass.fr"}, []byte("test fermeture maintenance"))
-				if err != nil {
-					log.Infoln("err", "Can't contact mail server")
-				}*/
 			}
 		}
 
