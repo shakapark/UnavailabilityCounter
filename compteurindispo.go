@@ -288,9 +288,18 @@ func main() {
 				log.Infoln("info", "Go to Normale Mode")
 				Maintenance = false
 			}
+			http.Redirect(w, r, "/", 301)
 		}
 
-		http.Redirect(w, r, "/", 301)
+		if r.Method == "GET" {
+			w.Header().Set("Content-Type", "text/html")
+			if Maintenance == false {
+				w.Write([]byte("Off"))
+			}else{
+				w.Write([]byte("On"))
+			}
+		}
+
 	})
 	
 	http.HandleFunc("/api/v1/query_range", func(w http.ResponseWriter, r *http.Request) {
