@@ -141,85 +141,16 @@ func probeHandler(w http.ResponseWriter, r *http.Request, c *Config) {
 
 	registry := prometheus.NewRegistry()
 	groups := c.Counter   					//groups:map[string]Group
-	for groupName, group := range groups {
-		
-		switch group.Kind {
 
-		case "http":
-			probeSuccessGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-					Name: "probe_success_"+groupName,
-					Help: "Displays whether or not the probe was a success",
-				},[]string{"target"})
-			registry.MustRegister(probeSuccessGauge)
-			
-			var t = make([]int,len(group.Targets),len(group.Targets))
-			
-			for i, address := range group.Targets {
-				
-				success := ProbeHTTP(address)
-				if success {
-					probeSuccessGauge.With(prometheus.Labels{"target":address}).Set(1)
-					t[i] = 1
-				} else {
-					if Maintenance {
-						probeSuccessGauge.With(prometheus.Labels{"target":address}).Set(1)
-						t[i] = 1
-					}else{
-						probeSuccessGauge.With(prometheus.Labels{"target":address}).Set(0)
-						t[i] = 0
-					}
-				}
-			}
-			var somme int
-			somme = 0
-			for _, v := range t {
-				somme += v
-			}
-			register(somme, groupName)
-
-		case "tcp":
-			probeSuccessGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-					Name: "probe_success_"+groupName,
-					Help: "Displays whether or not the probe was a success",
-				},[]string{"target"})
-			registry.MustRegister(probeSuccessGauge)
-			
-			var t = make([]int,len(group.Targets),len(group.Targets))
-			
-			for i, address := range group.Targets {
-				
-				success := ProbeTCP(address)
-				if success {
-					probeSuccessGauge.With(prometheus.Labels{"target":address}).Set(1)
-					t[i] = 1
-				} else {
-					if Maintenance {
-						probeSuccessGauge.With(prometheus.Labels{"target":address}).Set(1)
-						t[i] = 1
-					}else{
-						probeSuccessGauge.With(prometheus.Labels{"target":address}).Set(0)
-						t[i] = 0
-					}
-				}
-			}
-			var somme int
-			somme = 0
-			for _, v := range t {
-				somme += v
-			}
-			register(somme, groupName)
-		
-		default:
-			log.Infoln("err", "Unknown kind request : ", group.Kind)
-		}
-	}
-
+	collector := collector{groups: groups}
+	registry.MustRegister(collector)	
+	
 	if Maintenance {
 		probeMaintenance := prometheus.NewGauge(prometheus.GaugeOpts{
 					Name: "probe_maintenance",
 					Help: "Displays whether or not there is a Maintenance",
 				})
-			registry.MustRegister(probeMaintenance)
+		registry.MustRegister(probeMaintenance)
 		probeMaintenance.Set(1)
 		
 	}
