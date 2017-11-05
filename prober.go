@@ -12,7 +12,7 @@ import(
 )
 
 type collector struct {
-	groups map[string]Group
+	instances []Instance
 }
 
 func probeGoogle() bool {
@@ -30,8 +30,9 @@ func probeGoogle() bool {
 }
 
 func ProbeTCP(target string) bool {
-
-	conn, err := net.Dial("tcp4",target)
+	
+	d, _ := time.ParseDuration("1s")
+	conn, err := net.DialTimeout("tcp4",target, d)
 	if err != nil {
 		success := probeGoogle()
 		if success == true {
@@ -102,71 +103,84 @@ func (c collector) Describe(ch chan<- *prometheus.Desc) {
 
 func (c collector) Collect(ch chan<- prometheus.Metric){
 	
-	for groupName, group := range c.groups {
-		switch group.Kind {
-
-			case "http":
-			
-				var t = make([]int,len(group.Targets),len(group.Targets))
-			
-				for i, address := range group.Targets {
-				
-					success := ProbeHTTP(address)
-					if success {
-						t[i] = 1
-					} else {
-						if Maintenance {
-							t[i] = 1
-						}else{
-							t[i] = 0
-						}
-					}
-				
-					ch <- prometheus.MustNewConstMetric(
-					  prometheus.NewDesc("probe_success_"+groupName, "Displays whether or not the probe was a success", []string{"target"}, nil),
-					  prometheus.GaugeValue,
-					  float64(t[i]),
-					  address)
-				}
-				var somme int
-				somme = 0
-				for _, v := range t {
-					somme += v
-				}
-				register(somme, groupName)
-
-			case "tcp":
-			
-				var t = make([]int,len(group.Targets),len(group.Targets))
-			
-				for i, address := range group.Targets {
-				
-					success := ProbeTCP(address)
-					if success {
-						t[i] = 1
-					} else {
-						if Maintenance {
-							t[i] = 1
-						}else{
-							t[i] = 0
-						}
-					}
-				
-					ch <- prometheus.MustNewConstMetric(
-					  prometheus.NewDesc("probe_success_"+groupName, "Displays whether or not the probe was a success", []string{"target"}, nil),
-					  prometheus.GaugeValue,
-					  float64(t[i]),
-					  address)
-				}
-				var somme int
-				somme = 0
-				for _, v := range t {
-					somme += v
-				}
-				register(somme, groupName)
+	for _, instance := range c.instances {
+		var t2 = make([]int,len(instance.Groups),len(instance.Groups))
+		var k int
+		k = 0
 		
-			default:
-				log.Infoln("err", "Unknown kind request : ", group.Kind)
-		}	
+		for groupName, group := range instance.Groups {
+			var t = make([]int,len(group.Targets),len(group.Targets))
+			var somme int
+			
+			switch group.Kind {
+
+				case "http":
+			
+					for i, address := range group.Targets {
+				
+						success := ProbeHTTP(address)
+						if success {
+							t[i] = 1
+						} else {
+							if Maintenance {
+								t[i] = 1
+							}else{
+								t[i] = 0
+							}
+						}
+				
+						ch <- prometheus.MustNewConstMetric(
+						  prometheus.NewDesc("probe_success_"+instance.Name+"_"+groupName, "Displays whether or not the probe was a success", []string{"target"}, nil),
+						  prometheus.GaugeValue,
+						  float64(t[i]),
+						  address)
+					}
+					somme = 0
+					for _, v := range t {
+						somme += v
+					}
+					register(somme, instance.Name, groupName)
+
+				case "tcp":
+
+					for i, address := range group.Targets {
+				
+						success := ProbeTCP(address)
+						if success {
+							t[i] = 1
+						} else {
+							if Maintenance {
+								t[i] = 1
+							}else{
+								t[i] = 0
+							}
+						}
+				
+						ch <- prometheus.MustNewConstMetric(
+						  prometheus.NewDesc("probe_success_"+instance.Name+"_"+groupName, "Displays whether or not the probe was a success", []string{"target"}, nil),
+						  prometheus.GaugeValue,
+						  float64(t[i]),
+						  address)
+					}
+					var somme int
+					somme = 0
+					for _, v := range t {
+						somme += v
+					}
+					register(somme, instance.Name, groupName)
+		
+				default:
+					log.Infoln("err", "Unknown kind request : ", group.Kind)
+			}
+			t2[k]=somme
+			k+=1
+		}
+		var somme2 int
+		somme2 = 0
+		for _, v := range t2 {
+			somme2 += v
+		}
+		
+		registerG(somme2, instance.Name)
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import(
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -31,6 +32,7 @@ type Metric struct {
 	Name string `json:"__name__"`
 	Job string `json:"job"`
 	Instance string `json:"instance"`
+	Group string `json:"instance"`
 }
 
 func getPercent(s int64,t int64) float64 {
@@ -70,7 +72,7 @@ func addValue(a []model.SamplePair, n model.Time, v model.SampleValue) []model.S
 	return t
 }
 
-func queryTimeByMonth(year int, month string, instance string, start int64, end int64, step int64) (int64, error) { //month:now|January|February|...|November|December
+func queryTimeByMonth(year int, month string, instance string, group string, start int64, end int64, step int64) (int64, error) { //month:now|January|February|...|November|December
 
 	if start >=end {
 		log.Infoln("err", "Bad TimeStamp, start > end!")
@@ -84,7 +86,17 @@ func queryTimeByMonth(year int, month string, instance string, start int64, end 
 	
 	var sum int64
 	sum = 0
-	var path = "/data/"+instance+"/"+month+strconv.Itoa(year)
+	
+	var path string
+	if !(contains(group, GroupNames)) {
+		if group == "" {
+			path = "/data/"+instance+"/"+month+strconv.Itoa(year)
+		}else{
+			return 0, errors.New("Unknown group " + group)
+		}
+	}else{
+		path = "/data/"+instance+"/"+group+"/"+month+strconv.Itoa(year)
+	}
 	
 	contentFile, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -121,11 +133,11 @@ func queryTimeByMonth(year int, month string, instance string, start int64, end 
 	return sum, nil
 }
 
-func queryTime(start int64, end int64, step int64, query string, instances []string) sendData {
+func queryTime(start int64, end int64, step int64, query string, instance string, group string) sendData {
 	results := make([]Result, 1)
 	timeTotal := end-start
 	var result Result
-	result.Metric = Metric{Name: query, Job: "compteur", Instance: toString(instances)}
+	result.Metric = Metric{Name: query, Job: "compteur", Instance: instance, Group: group}
 	var v []model.SamplePair
 	var sum int64 = 0
 	var p float64
@@ -136,29 +148,25 @@ func queryTime(start int64, end int64, step int64, query string, instances []str
 		
 		year = time.Unix(start, 0).Year()
 		monthS = time.Unix(start, 0).Month().String()
-		
-		for _, instance := range instances {
-			if !(contains(instance, GroupNames)) {
-				log.Infoln("Error : Unknown instance ", instance)
-				break
-			}
-			
-			endTmp := start+step
-			if endTmp >= end {
-				s, err := queryTimeByMonth(year, monthS, instance, start, end, step)
-				if err != nil {
-					log.Infoln("err : ", err)
-				}
-				sum += s
-			}else{
-				s, err := queryTimeByMonth(year, monthS, instance, start, start+step, step)
-				if err != nil {
-					log.Infoln("err : ", err)
-				}
-				sum += s
-			}
-			
 
+		if !(contains(instance, InstancesNames)) {
+			log.Infoln("Error : Unknown instance ", instance)
+			break
+		}
+		
+		endTmp := start+step
+		if endTmp >= end {
+			s, err := queryTimeByMonth(year, monthS, instance, group, start, end, step)
+			if err != nil {
+				log.Infoln("err : ", err)
+			}
+			sum += s
+		}else{
+			s, err := queryTimeByMonth(year, monthS, instance, group, start, start+step, step)
+			if err != nil {
+				log.Infoln("err : ", err)
+			}
+			sum += s
 		}
 		
 		p = getPercent(sum, timeTotal)
@@ -172,81 +180,80 @@ func queryTime(start int64, end int64, step int64, query string, instances []str
 	return sendData{Status: "loading", Data: Data{ResultType: "matrix", Results: results}}
 }
 
-func queryCounter(start int64, end int64, step int64, query string, instances []string) sendData {
-	results := make([]Result, len(instances))
-	for i, instance := range instances {
-		if !(contains(instance, GroupNames)) {
-			log.Infoln("Error : Unknown instance ", instance)
-			break
-		}
-		var result Result
-		var path string
-		path = "/data/"+instance+"/"
-		result.Metric = Metric{Name: query, Job: "compteur", Instance: instance}
-		var v []model.SamplePair
+/*func queryCounter(start int64, end int64, step int64, query string, instance string, group string) sendData {
+	results := make([]Result, 1)
 
-		for start <= end {
-			var contentFile []byte
-			var err error
-			year := time.Unix(start, 0).Year()
-			month := time.Unix(start, 0).Month()
-			contentFile, err = ioutil.ReadFile(path+month.String()+strconv.Itoa(year))
-			
-			if err != nil {
-				log.Infoln("err : ", err)
-			
+	if !(contains(instance, GroupNames)) {
+		log.Infoln("Error : Unknown instance ", instance)
+		break
+	}
+	var result Result
+	var path string
+	path = "/data/"+instance+"/"
+	result.Metric = Metric{Name: query, Job: "compteur", Instance: instance}
+	var v []model.SamplePair
+
+	for start <= end {
+		var contentFile []byte
+		var err error
+		year := time.Unix(start, 0).Year()
+		month := time.Unix(start, 0).Month()
+		contentFile, err = ioutil.ReadFile(path+month.String()+strconv.Itoa(year))
+		
+		if err != nil {
+			log.Infoln("err : ", err)
+		
+			for time.Unix(start, 0).Month() == month {
+				start += step
+			}
+		}else{
+	
+			if contentFile == nil || len(contentFile) == 0 {
 				for time.Unix(start, 0).Month() == month {
 					start += step
 				}
 			}else{
 		
-				if contentFile == nil || len(contentFile) == 0 {
-					for time.Unix(start, 0).Month() == month {
-						start += step
-					}
-				}else{
-			
-					var saveData SaveData
-		
-					if err := json.Unmarshal(contentFile, &saveData); err != nil {
-						log.Fatal("err", err)
-					}
-		
-					//Lecture de saveData.Data pour check timestamp
-					for _, i := range saveData.Data {			//i => []int64
-					
-						if i[0] <= start {
-							for start < i[1] {
-								v = addValue(v, model.TimeFromUnix(start), model.SampleValue(1))
+				var saveData SaveData
+	
+				if err := json.Unmarshal(contentFile, &saveData); err != nil {
+					log.Fatal("err", err)
+				}
+	
+				//Lecture de saveData.Data pour check timestamp
+				for _, i := range saveData.Data {			//i => []int64
+				
+					if i[0] <= start {
+						for start < i[1] {
+							v = addValue(v, model.TimeFromUnix(start), model.SampleValue(1))
+							start += step
+						}
+					}else{
+						for start >= i[0] {
+							for start <= end {
+								v = addValue(v, model.TimeFromUnix(start), model.SampleValue(0))
 								start += step
-							}
-						}else{
-							for start >= i[0] {
-								for start <= end {
-									v = addValue(v, model.TimeFromUnix(start), model.SampleValue(0))
-									start += step
-								}
 							}
 						}
 					}
-				
-					v = addValue(v, model.TimeFromUnix(start), model.SampleValue(0))
-					start += step
 				}
+			
+				v = addValue(v, model.TimeFromUnix(start), model.SampleValue(0))
+				start += step
 			}
 		}
-		if v == nil {
-			v = addValue(v, model.TimeFromUnix(start), model.SampleValue(0))
-		}
-		result.Values = v
-		
-		results[i] = result
 	}
+	if v == nil {
+		v = addValue(v, model.TimeFromUnix(start), model.SampleValue(0))
+	}
+	result.Values = v
+	
+	results[i] = result
 	
 	return sendData{Status: "loading", Data: Data{ResultType: "matrix", Results: results}}
 }
-
-func queryRangeHandler(w http.ResponseWriter, r *http.Request, listGroup []string) {
+*/
+func queryRangeHandler(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query().Get("query")
 	if query == "" {
@@ -285,51 +292,79 @@ func queryRangeHandler(w http.ResponseWriter, r *http.Request, listGroup []strin
 	
 	switch query {
 	
-		case "counter":
+		/*case "counter":
 			if len(tmp) > 1 {
-				tmp2 := strings.Split(tmp[1], ":")
-				if len(tmp2) != 2 {
-					http.Error(w, "Error parsing query", 400)
+				tmp2 := strings.Split(tmp[1], "}")
+				tmp3 := strings.Split(tmp2[0], ",")
+				
+				tmp4 := strings.Split(tmp3[0], "=")
+				if tmp4[0] != "instance" {
+					http.Error(w, "Unknown parameter : "+tmp4[0], 400)
 					return
 				}
-
-				if tmp2[0] != "instance" {
-					http.Error(w, "Unknown parameter : "+tmp2[0], 400)
-					return
+				tmp5 := strings.Split(tmp4[1], "\"")
+				instance := tmp5[0]
+				
+				switch len(tmp3) {
+					
+					case 1:
+						sendGrafana = queryCounter(start, end, step, query, instance, "")
+					
+					case 2:
+						tmp6 := strings.Split(tmp3[1], "=")
+						if tmp6[0] != "group" {
+							http.Error(w, "Unknown parameter : "+tmp6[0], 400)
+							return
+						}
+						tmp7 := strings.Split(tmp6[1], "\"")
+						group := tmp7[0]
+						sendGrafana = queryCounter(start, end, step, query, instance, group)
+					
+					default:
+						http.Error(w, "Error parsing query", 400)
+						return
 				}
-		
-				tmp3 := strings.Split(tmp2[1], "}")
-				tmp4 := strings.Split(tmp3[0], "\"")
-				instance := tmp4[1]
-		
-				sendGrafana = queryCounter(start, end, step, query, []string{instance})
-		
 			}else{
-				sendGrafana = queryCounter(start, end, step, query, listGroup)
-			}
+				http.Error(w, "Instance must be specified", 400)
+				return
+			}*/
 		
 		case "time":
 			if len(tmp) > 1 {
-				tmp2 := strings.Split(tmp[1], ":")
-				if len(tmp2) != 2 {
-					http.Error(w, "Error parsing query", 400)
+				tmp2 := strings.Split(tmp[1], "}")
+				tmp3 := strings.Split(tmp2[0], ",")
+				
+				tmp4 := strings.Split(tmp3[0], "=")
+				if tmp4[0] != "instance" {
+					http.Error(w, "Unknown parameter : "+tmp4[0], 400)
 					return
 				}
-
-				if tmp2[0] != "instance" {
-					http.Error(w, "Unknown parameter : "+tmp2[0], 400)
-					return
+				tmp5 := strings.Split(tmp4[1], "\"")
+				instance := tmp5[0]
+				
+				switch len(tmp3) {
+					
+					case 1:
+						sendGrafana = queryTime(start, end, step, query, instance, "")
+					
+					case 2:
+						tmp6 := strings.Split(tmp3[1], "=")
+						if tmp6[0] != "group" {
+							http.Error(w, "Unknown parameter : "+tmp6[0], 400)
+							return
+						}
+						tmp7 := strings.Split(tmp6[1], "\"")
+						group := tmp7[0]
+						sendGrafana = queryTime(start, end, step, query, instance, group)
+					
+					default:
+						http.Error(w, "Error parsing query", 400)
+						return
 				}
-		
-				tmp3 := strings.Split(tmp2[1], "}")
-				tmp4 := strings.Split(tmp3[0], "\"")
-				instance := tmp4[1]
-		
-				sendGrafana = queryTime(start, end, step, query, []string{instance})
-		
 			}else{
-				sendGrafana = queryTime(start, end, step, query, listGroup)
-			}		
+				http.Error(w, "Instance must be specified", 400)
+				return
+			}	
 		
 		default:
 			http.Error(w, "Unknown request : "+tmp[0], 400)

@@ -29,13 +29,20 @@ type Indispo struct {
 }
 
 type Config struct {
-	Counter map[string]Group `yaml:"count"`
+	Counter []Instance `yaml:"count"`
+	XXX map[string]interface{} `yaml:",inline"`
+}
+
+type Instance struct {
+	Name string `yaml:"name"`
+	Groups map[string]Group `yaml:"group"`
 	XXX map[string]interface{} `yaml:",inline"`
 }
 
 type Group struct {
 	Targets []string `yaml:"targets"`
 	Kind string `yaml:"kind"`
+	XXX map[string]interface{} `yaml:",inline"`
 }
 
 type SafeConfig struct {
@@ -51,6 +58,7 @@ var(
 	Maintenance bool
 	maintenanceTexte string
 	
+	InstancesNames []string
 	GroupNames []string
 	Indispos map[string]Indispo
 	
@@ -59,18 +67,34 @@ var(
 )
 
 func getGroupNames(c *Config){
-	groups := c.Counter
+	instances := c.Counter			//instances: []Instance
+	InstancesNames = []string{}
 	GroupNames = []string{}
-	for name, _ := range groups {
-		tmp := make([]string, len(GroupNames)+1, len(GroupNames)+1)
-		for i, _ := range GroupNames {
-			tmp[i] = GroupNames[i]
-		}
-		tmp[len(GroupNames)] = name
-		GroupNames = tmp
-		err := os.Mkdir("/data/"+name, 0777)
-		if err != nil {
-			log.Infoln("Msg:", err)
+	
+	for _, instance := range instances {
+		tmp := make([]string, len(InstancesNames)+1, len(InstancesNames)+1)
+			for i, _ := range InstancesNames {
+				tmp[i] = InstancesNames[i]
+			}
+			tmp[len(InstancesNames)] = instance.Name
+			InstancesNames = tmp
+			err := os.Mkdir("/data/"+instance.Name, 0777)
+			if err != nil {
+				log.Infoln("msg:", err)
+			}
+		
+		groups := instance.Groups
+		for name, _ := range groups {
+			tmp2 := make([]string, len(GroupNames)+1, len(GroupNames)+1)
+			for i, _ := range GroupNames {
+				tmp2[i] = GroupNames[i]
+			}
+			tmp2[len(GroupNames)] = name
+			GroupNames = tmp2
+			err := os.Mkdir("/data/"+instance.Name+"/"+name, 0777)
+			if err != nil {
+				log.Infoln("msg:", err)
+			}
 		}
 	}
 }
@@ -79,7 +103,17 @@ func getIndispos(ns []string){
 	Indispos = make(map[string]Indispo)
 
 	for _, n := range ns {
-		
+		var tmp Indispo
+		tmp.Progress = false
+		tmp.StartTimeStamp = time.Now()
+		tmp.StopTimeStamp = time.Now()
+		tmp.TimeStampBack = time.Now()
+		Indispos[n] = tmp
+	}
+}
+
+func addIndispos(ns []string){
+	for _, n := range ns {
 		var tmp Indispo
 		tmp.Progress = false
 		tmp.StartTimeStamp = time.Now()
@@ -107,6 +141,7 @@ func (sc *SafeConfig) ReloadConfig(confFile string) (err error) {
 	
 	getGroupNames(c)
 	getIndispos(GroupNames)
+	addIndispos(InstancesNames)
 	
 	return nil
 }
@@ -133,6 +168,17 @@ func (s *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+func (s *Instance) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type plain Instance
+	if err := unmarshal((*plain)(s)); err != nil {
+		return err
+	}
+	if err := checkOverflow(s.XXX, "instance"); err != nil {
+		return err
+	}
+	return nil
+}
+
 func init() {
 	prometheus.MustRegister(version.NewCollector("compteur_indispo"))
 }
@@ -140,17 +186,17 @@ func init() {
 func probeHandler(w http.ResponseWriter, r *http.Request, c *Config) {
 
 	registry := prometheus.NewRegistry()
-	groups := c.Counter   					//groups:map[string]Group
-
-	collector := collector{groups: groups}
-	registry.MustRegister(collector)	
+	instances := c.Counter   				//instances:[]Instance
 	
+	collector := collector{instances: instances}
+	registry.MustRegister(collector)
+
 	if Maintenance {
 		probeMaintenance := prometheus.NewGauge(prometheus.GaugeOpts{
 					Name: "probe_maintenance",
 					Help: "Displays whether or not there is a Maintenance",
 				})
-		registry.MustRegister(probeMaintenance)
+			registry.MustRegister(probeMaintenance)
 		probeMaintenance.Set(1)
 		
 	}
@@ -170,7 +216,7 @@ func main() {
 	log.Infoln("msg", "Build context", version.BuildContext())
 
 	if err := sc.ReloadConfig(*configFile); err != nil {
-		log.Fatal("msg", "Error loading config", "err", err)
+		log.Fatal("Error loading config", err)
 		os.Exit(1)
 	}
 	
@@ -230,11 +276,10 @@ func main() {
 				w.Write([]byte("On"))
 			}
 		}
-
 	})
 	
 	http.HandleFunc("/api/v1/query_range", func(w http.ResponseWriter, r *http.Request) {
-		queryRangeHandler(w, r, GroupNames)
+		queryRangeHandler(w, r)
 	})
 
 	http.HandleFunc("/api/v1/label/__name__/values", func(w http.ResponseWriter, r *http.Request) {
