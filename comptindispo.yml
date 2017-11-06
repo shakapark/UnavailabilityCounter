@@ -1,15 +1,17 @@
 count:
-  - name: instanceName
-  groupName:
-    targets: ["ip:port","url","etc"]
-    kind: "tcp"|"http"
-  groupName:
-    targets: ["ip:port","url","etc"]
-    kind: "tcp"|"http"
-  - name: instanceName
-  groupName:
-    targets: ["ip:port","url","etc"]
-    kind: "tcp"|"http"
-  groupName:
-    targets: ["ip:port","url","etc"]
-    kind: "tcp"|"http"
+- name: instanceName
+  group:
+    groupName:
+      targets: ["ip:port","url","etc"]
+      kind: "tcp"|"http"
+    groupName:
+      targets: ["ip:port","url","etc"]
+      kind: "tcp"|"http"
+- name: instanceName
+  group:
+    groupName:
+      targets: ["ip:port","url","etc"]
+      kind: "tcp"|"http"
+    groupName:
+      targets: ["ip:port","url","etc"]
+      kind: "tcp"|"http"
