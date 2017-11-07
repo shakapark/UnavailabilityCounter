@@ -112,10 +112,10 @@ func register(result int, instance string, groupName string){
 	}
 }
 
-func registerG(result int, instance string){
+func registerG(result bool, instance string){
 	var path string
 	indi := Indispos[instance]
-	if result == 0 {
+	if result {
 		
 		if indi.Progress == false {
 			indi.StartTimeStamp = time.Now()

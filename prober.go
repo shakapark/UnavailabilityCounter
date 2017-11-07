@@ -175,10 +175,13 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 			t2[k]=somme
 			k+=1
 		}
-		var somme2 int
-		somme2 = 0
+		
+		var somme2 bool
+		somme2 = false
 		for _, v := range t2 {
-			somme2 += v
+			if v == 0 {
+				somme2 = true
+			}
 		}
 		
 		registerG(somme2, instance.Name)
