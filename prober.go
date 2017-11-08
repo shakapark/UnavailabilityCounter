@@ -162,7 +162,6 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 						  float64(t[i]),
 						  address)
 					}
-					var somme int
 					somme = 0
 					for _, v := range t {
 						somme += v
