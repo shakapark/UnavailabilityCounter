@@ -20,7 +20,7 @@ import(
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
 	
-	"github.com/shakapark/UnavailabilityCounter/config
+	"github.com/shakapark/UnavailabilityCounter/config"
 )
 
 type Indispo struct {
