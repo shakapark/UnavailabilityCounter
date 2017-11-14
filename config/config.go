@@ -2,6 +2,8 @@ package main
 
 import(
 	"fmt"
+	"io/ioutil"
+	"strings"
 	"sync"
 
 	yaml "gopkg.in/yaml.v2"
