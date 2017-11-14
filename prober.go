@@ -17,9 +17,13 @@ type collector struct {
 	instances []config.Instance
 }
 
-func probeGoogle() bool {
+func probeGoogle(timeout string) bool {
 	
-	d, _ := time.ParseDuration("1s")
+	d, r := time.ParseDuration(timeout)
+	if r != nil {
+		log.Infoln("err", err)
+		return false
+	}
 	conn, err := net.DialTimeout("tcp4","google.fr:80", d)
 	if err != nil {
 		log.Infoln("err", err)
@@ -31,12 +35,16 @@ func probeGoogle() bool {
 	return true
 }
 
-func ProbeTCP(target string) bool {
+func ProbeTCP(target string, timeout string) bool {
 	
-	d, _ := time.ParseDuration("1s")
+	d, r := time.ParseDuration(timeout)
+	if r != nil {
+		log.Infoln("err", err)
+		return false
+	}
 	conn, err := net.DialTimeout("tcp4",target, d)
 	if err != nil {
-		success := probeGoogle()
+		success := probeGoogle(timeout)
 		if success == true {
 			return false
 		}else{
@@ -49,7 +57,7 @@ func ProbeTCP(target string) bool {
 	return true
 }
 
-func ProbeHTTP(target string) bool {
+func ProbeHTTP(target string, timeout string) bool {
 	if !strings.HasPrefix(target, "http://") && !strings.HasPrefix(target, "https://") {
 		target = "http://" + target
 	}
@@ -58,7 +66,11 @@ func ProbeHTTP(target string) bool {
 	code = 305
 	
 	for code >= 301 && code <= 308 {
-		d, _ := time.ParseDuration("1s")
+		d, r := time.ParseDuration(timeout)
+		if r != nil {
+			log.Infoln("err", err)
+			return false
+		}
 		ctx, _ := context.WithTimeout(context.Background(), d)
 		req, err := http.NewRequest("GET", target, nil)
 		req = req.WithContext(ctx)
@@ -67,7 +79,7 @@ func ProbeHTTP(target string) bool {
 		resp, err := client.Do(req)
 
 		if err != nil {
-			success := probeGoogle()
+			success := probeGoogle(timeout)
 			if success == true {
 				return false
 			}else{
@@ -114,13 +126,21 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 			var t = make([]int,len(group.Targets),len(group.Targets))
 			var somme int
 			
+			if group.Timeout == "" {
+				group.Timeout = 
+			}
+			
 			switch group.Kind {
 
 				case "http":
 			
+					if group.Timeout == "" {
+						group.Timeout = "10s"
+					}
+					
 					for i, address := range group.Targets {
 				
-						success := ProbeHTTP(address)
+						success := ProbeHTTP(address, group.Timeout)
 						if success {
 							t[i] = 1
 						} else {
@@ -145,9 +165,13 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 
 				case "tcp":
 
+					if group.Timeout == "" {
+						group.Timeout = "5s"
+					}
+
 					for i, address := range group.Targets {
 				
-						success := ProbeTCP(address)
+						success := ProbeTCP(address, group.Timeout)
 						if success {
 							t[i] = 1
 						} else {

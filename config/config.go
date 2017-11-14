@@ -23,6 +23,7 @@ type Instance struct {
 type Group struct {
 	Targets []string `yaml:"targets"`
 	Kind string `yaml:"kind"`
+	Timeout string `yaml:"timeout,omitempty"`
 	XXX map[string]interface{} `yaml:",inline"`
 }
 
