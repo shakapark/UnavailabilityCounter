@@ -2,6 +2,7 @@ package main
 
 import(
 	"fmt"
+	"sync"
 
 	yaml "gopkg.in/yaml.v2"
 )
