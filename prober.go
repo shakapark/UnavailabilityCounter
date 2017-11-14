@@ -21,7 +21,7 @@ func probeGoogle(timeout string) bool {
 	
 	d, r := time.ParseDuration(timeout)
 	if r != nil {
-		log.Infoln("err", err)
+		log.Infoln("err", r)
 		return false
 	}
 	conn, err := net.DialTimeout("tcp4","google.fr:80", d)
@@ -39,7 +39,7 @@ func ProbeTCP(target string, timeout string) bool {
 	
 	d, r := time.ParseDuration(timeout)
 	if r != nil {
-		log.Infoln("err", err)
+		log.Infoln("err", r)
 		return false
 	}
 	conn, err := net.DialTimeout("tcp4",target, d)
@@ -68,7 +68,7 @@ func ProbeHTTP(target string, timeout string) bool {
 	for code >= 301 && code <= 308 {
 		d, r := time.ParseDuration(timeout)
 		if r != nil {
-			log.Infoln("err", err)
+			log.Infoln("err", r)
 			return false
 		}
 		ctx, _ := context.WithTimeout(context.Background(), d)
@@ -90,7 +90,7 @@ func ProbeHTTP(target string, timeout string) bool {
 			if code == 200 {
 				return true
 			}else if !(code >= 301 && code <= 308) {
-				success := probeGoogle()
+				success := probeGoogle(timeout)
 				if success == true {
 					return false
 				}else{
