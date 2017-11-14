@@ -137,6 +137,10 @@ func main() {
 		os.Exit(1)
 	}
 	
+	getGroupNames(sc.C)
+	getIndispos(GroupNames)
+	addIndispos(InstancesNames)
+	
 	log.Infoln("msg", "Loaded config file")
 
 	hup := make(chan os.Signal)
