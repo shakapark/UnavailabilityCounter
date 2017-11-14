@@ -126,10 +126,6 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 			var t = make([]int,len(group.Targets),len(group.Targets))
 			var somme int
 			
-			if group.Timeout == "" {
-				group.Timeout = 
-			}
-			
 			switch group.Kind {
 
 				case "http":
