@@ -19,6 +19,8 @@ import(
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
+	
+	"github.com/shakapark/UnavailabilityCounter/config
 )
 
 type Indispo struct {
@@ -28,32 +30,8 @@ type Indispo struct {
 	TimeStampBack time.Time
 }
 
-type Config struct {
-	Counter []Instance `yaml:"count"`
-	XXX map[string]interface{} `yaml:",inline"`
-}
-
-type Instance struct {
-	Name string `yaml:"name"`
-	Groups map[string]Group `yaml:"group"`
-	XXX map[string]interface{} `yaml:",inline"`
-}
-
-type Group struct {
-	Targets []string `yaml:"targets"`
-	Kind string `yaml:"kind"`
-	XXX map[string]interface{} `yaml:",inline"`
-}
-
-type SafeConfig struct {
-	sync.RWMutex
-	C *Config
-}
-
 var(
-	sc = SafeConfig{
-		C: &Config{},
-	}
+	sc = &config.SafeConfig{C: &config.Config{},}
 	
 	Maintenance bool
 	maintenanceTexte string
@@ -66,7 +44,7 @@ var(
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":9143").String()
 )
 
-func getGroupNames(c *Config){
+func getGroupNames(c *config.Config){
 	instances := c.Counter			//instances: []Instance
 	InstancesNames = []string{}
 	GroupNames = []string{}
@@ -121,62 +99,6 @@ func addIndispos(ns []string){
 		tmp.TimeStampBack = time.Now()
 		Indispos[n] = tmp
 	}
-}
-
-func (sc *SafeConfig) ReloadConfig(confFile string) (err error) {
-	var c = &Config{}
-
-	yamlFile, err := ioutil.ReadFile(confFile)
-	if err != nil {
-		return fmt.Errorf("Error reading config file: %s", err)
-	}
-
-	if err := yaml.Unmarshal(yamlFile, c); err != nil {
-		return fmt.Errorf("Error parsing config file: %s", err)
-	}
-
-	sc.Lock()
-	sc.C = c
-	sc.Unlock()
-	
-	getGroupNames(c)
-	getIndispos(GroupNames)
-	addIndispos(InstancesNames)
-	
-	return nil
-}
-
-func checkOverflow(m map[string]interface{}, ctx string) error {
-	if len(m) > 0 {
-		var keys []string
-		for k := range m {
-			keys = append(keys, k)
-		}
-		return fmt.Errorf("unknown fields in %s: %s", ctx, strings.Join(keys, ", "))
-	}
-	return nil
-}
-
-func (s *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type plain Config
-	if err := unmarshal((*plain)(s)); err != nil {
-		return err
-	}
-	if err := checkOverflow(s.XXX, "config"); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Instance) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type plain Instance
-	if err := unmarshal((*plain)(s)); err != nil {
-		return err
-	}
-	if err := checkOverflow(s.XXX, "instance"); err != nil {
-		return err
-	}
-	return nil
 }
 
 func init() {
@@ -246,6 +168,24 @@ func main() {
 			}
 		}
 	}()
+	
+	http.HandleFunc("/-/reload",
+		func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "POST" {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				fmt.Fprintf(w, "This endpoint requires a POST request.\n")
+				return
+			}
+
+			rc := make(chan error)
+			reloadCh <- rc
+			if err := <-rc; err != nil {
+				http.Error(w, fmt.Sprintf("failed to reload config: %s", err), http.StatusInternalServerError)
+			}
+			getGroupNames(c)
+			getIndispos(GroupNames)
+			addIndispos(InstancesNames)
+		})
 	
 	http.HandleFunc("/probe", func(w http.ResponseWriter, r *http.Request) {
 		sc.Lock()
