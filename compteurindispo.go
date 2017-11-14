@@ -2,17 +2,12 @@ package main
 
 import(
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 	//"net/smtp"
-	"strings"
-	"sync"
 	"syscall"
-
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -105,7 +100,7 @@ func init() {
 	prometheus.MustRegister(version.NewCollector("compteur_indispo"))
 }
 
-func probeHandler(w http.ResponseWriter, r *http.Request, c *Config) {
+func probeHandler(w http.ResponseWriter, r *http.Request, c *config.Config) {
 
 	registry := prometheus.NewRegistry()
 	instances := c.Counter   				//instances:[]Instance
@@ -182,7 +177,8 @@ func main() {
 			if err := <-rc; err != nil {
 				http.Error(w, fmt.Sprintf("failed to reload config: %s", err), http.StatusInternalServerError)
 			}
-			getGroupNames(c)
+			
+			getGroupNames(sc.C)
 			getIndispos(GroupNames)
 			addIndispos(InstancesNames)
 		})

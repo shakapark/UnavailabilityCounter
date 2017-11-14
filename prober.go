@@ -9,10 +9,12 @@ import(
 	
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	
+	"github.com/shakapark/UnavailabilityCounter/config"
 )
 
 type collector struct {
-	instances []Instance
+	instances []config.Instance
 }
 
 func probeGoogle() bool {
