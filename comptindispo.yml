@@ -4,14 +4,18 @@ count:
     groupName:
       targets: ["ip:port","url","etc"]
       kind: "tcp"|"http"
+      timeout: "xms"|"xs"|"xm"
     groupName:
       targets: ["ip:port","url","etc"]
       kind: "tcp"|"http"
+      timeout: "xms"|"xs"|"xm"
 - name: instanceName
   group:
     groupName:
       targets: ["ip:port","url","etc"]
       kind: "tcp"|"http"
+      timeout: "xms"|"xs"|"xm"
     groupName:
       targets: ["ip:port","url","etc"]
       kind: "tcp"|"http"
+      timeout: "xms"|"xs"|"xm"
