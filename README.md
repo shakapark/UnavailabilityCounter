@@ -16,13 +16,17 @@ scrape_configs:
 
 ## On Grafana
 
-Add this to Grafana as a Prometheus datasource. And enter this request to get the percent of unavailability :
-
+To view the state of probes, use the prometheus metrics :
 ~~~ shell
-time{instance=<InstanceName>}
+probe_success_<InstanceName>_<GroupeName>{target="<targetURL|targetIP>"} #with prometheus datasource
+~~~
+
+Add this to Grafana as a Prometheus datasource. And enter this request to get the percent of unavailability :
+~~~ shell
+time{instance=<InstanceName>}                                            #with new datasource 
 ~~~
 
 If you have several groups in your configuration, you can separate unavailability :
 ~~~ shell
-time{instance=<InstanceName>,group=<GroupName>}
+time{instance=<InstanceName>,group=<GroupName>}                          #with new datasource 
 ~~~
