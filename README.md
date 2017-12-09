@@ -21,7 +21,7 @@ To view the state of probes, use the prometheus metrics :
 probe_success_<InstanceName>_<GroupeName>{target="<targetURL|targetIP>"} #with prometheus datasource
 ~~~
 
-Add this to Grafana as a Prometheus datasource. And enter this request to get the percent of unavailability :
+Add this program to Grafana as a Prometheus datasource. And enter this request to get the percent of unavailability :
 ~~~ shell
 time{instance=<InstanceName>}                                            #with new datasource 
 ~~~
