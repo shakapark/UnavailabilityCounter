@@ -27,15 +27,15 @@ func (m *Maintenance) GetLastUpdate() time.Time {
 
 func (m *Maintenance) String() string {
 	var s string
-	if m.IsEnable() s = "On"
-	else s = "Off"
-	m := "Maintenance is " + s + "since " + m.GetLastUpdate().String()
-	return m
+	if m.IsEnable() { s = "On" }
+	else { s = "Off" }
+	msg := "Maintenance is " + s + "since " + m.GetLastUpdate().String()
+	return msg
 }
 
 func (m *Maintenance) IsEnable() bool {
-	if m.GetStatus() return true
-	else return false
+	if m.GetStatus() { return true }
+	else { return false }
 }
 
 func (m *Maintenance) Enable() {
