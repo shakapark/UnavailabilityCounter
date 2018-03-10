@@ -28,7 +28,7 @@ type Indispo struct {
 func New(name string) *Indispo {
 	t := time.Now()
 	return &Indispo{
-		Name: name
+		Name:           name,
 		Progress:       false,
 		StartTimeStamp: t,
 		StopTimeStamp:  t,
@@ -73,16 +73,16 @@ func (i *Indispo) DisableMaintenance() {
 
 func (i *Indispo) toJson() *Json {
 	return &Json{
-		Name:   i.GetName()
-		Status: i.GetStatus()
+		Name:   i.GetName(),
+		Status: i.GetStatus(),
 		JsonMaintenance: JsonMaintenance{
 			Status:     i.getMaintenance().GetStatus()
 			LastUpdate: i.getMaintenance().GetLastUpdate().String()
-		}
+		},
 	}
 }
 
 func (i *Indispo) GetStatus() (string, error) {
 	j := i.toJson()
-	return msg, err := json.Marshal(j)
+	return json.Marshal(j)
 }
