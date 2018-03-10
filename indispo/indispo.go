@@ -74,17 +74,18 @@ func (i *Indispo) DisableMaintenance() {
 }
 
 func (i *Indispo) toJson() *Json {
+	var status; mStatus string
 	if i.Progress {
-		status := "Unavailable"
+		status = "Unavailable"
 	}else{
-		status := "Available"
+		status = "Available"
 	}
 	if i.getMaintenance().GetStatus() {
-		mStatus := "Maintenance Enable"
+		mStatus = "Maintenance Enable"
 	}else{
-		mStatus := "Maintenance Disable"
+		mStatus = "Maintenance Disable"
 	}
-	status := i.Progress
+	
 	return &Json{
 		Name:   i.GetName(),
 		Status: status,
