@@ -75,7 +75,7 @@ func (i *Indispo) toJson() *Json {
 	return &Json{
 		Name:   i.GetName(),
 		Status: i.GetStatus(),
-		JsonMaintenance: JsonMaintenance{
+		JsonMaintenance{
 			Status:     i.getMaintenance().GetStatus(),
 			LastUpdate: i.getMaintenance().GetLastUpdate().String(),
 		},
@@ -84,5 +84,5 @@ func (i *Indispo) toJson() *Json {
 
 func (i *Indispo) GetStatus() (string, error) {
 	j := i.toJson()
-	return json.Marshal(j)
+	return string(json.Marshal(j))
 }
