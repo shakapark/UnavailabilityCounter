@@ -7,13 +7,15 @@ import(
 	"github.com/shakapark/UnavailabilityCounter/maintenance"
 )
 
+type JsonMaintenance struct {
+	Status     string `json:"status"`
+	LastUpdate string `json:"last-update"`
+} `json:"maintenance"`
+
 type Json struct {
     Name        string `json:"name"`
 	Status      string `json:"status"`
-	JsonMaintenance struct {
-		Status     string `json:"status"`
-		LastUpdate string `json:"last-update"`
-	} `json:"maintenance"`
+	JsonMaintenance 
 }
 
 type Indispo struct {
@@ -22,7 +24,7 @@ type Indispo struct {
 	StartTimeStamp time.Time
 	StopTimeStamp  time.Time
 	TimeStampBack  time.Time
-	Maintenance    maintenance.Maintenance
+	Maintenance    *maintenance.Maintenance
 }
 
 func New(name string) *Indispo {
@@ -84,5 +86,6 @@ func (i *Indispo) toJson() *Json {
 
 func (i *Indispo) GetStatus() (string, error) {
 	j := i.toJson()
-	return string(json.Marshal(j))
+	msg, err := json.Marshal(j)
+	return string(msg), err
 }
