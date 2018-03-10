@@ -74,7 +74,7 @@ func (i *Indispo) DisableMaintenance() {
 }
 
 func (i *Indispo) toJson() *Json {
-	var status; mStatus string
+	var status, mStatus string
 	if i.Progress {
 		status = "Unavailable"
 	}else{
