@@ -10,12 +10,12 @@ import(
 type JsonMaintenance struct {
 	Status     string `json:"status"`
 	LastUpdate string `json:"last-update"`
-} `json:"maintenance"`
+}
 
 type Json struct {
-    Name        string `json:"name"`
-	Status      string `json:"status"`
-	JsonMaintenance 
+    Name            string          `json:"name"`
+	Status          string          `json:"status"`
+	JsonMaintenance JsonMaintenance `json:"maintenance"`
 }
 
 type Indispo struct {
