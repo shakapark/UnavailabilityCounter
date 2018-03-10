@@ -76,8 +76,8 @@ func (i *Indispo) toJson() *Json {
 		Name:   i.GetName(),
 		Status: i.GetStatus(),
 		JsonMaintenance: JsonMaintenance{
-			Status:     i.getMaintenance().GetStatus()
-			LastUpdate: i.getMaintenance().GetLastUpdate().String()
+			Status:     i.getMaintenance().GetStatus(),
+			LastUpdate: i.getMaintenance().GetLastUpdate().String(),
 		},
 	}
 }
