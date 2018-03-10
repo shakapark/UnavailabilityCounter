@@ -58,7 +58,7 @@ func (i *Indispo) GetName() string {
 }
 
 func (i *Indispo) getMaintenance() *maintenance.Maintenance {
-	return &i.Maintenance
+	return i.Maintenance
 }
 
 func (i *Indispo) IsMaintenanceEnable() bool {
@@ -74,11 +74,22 @@ func (i *Indispo) DisableMaintenance() {
 }
 
 func (i *Indispo) toJson() *Json {
+	if i.Progress {
+		status := "Unavailable"
+	}else{
+		status := "Available"
+	}
+	if i.getMaintenance().GetStatus() {
+		mStatus := "Maintenance Enable"
+	}else{
+		mStatus := "Maintenance Disable"
+	}
+	status := i.Progress
 	return &Json{
 		Name:   i.GetName(),
-		Status: i.GetStatus(),
+		Status: status,
 		JsonMaintenance{
-			Status:     i.getMaintenance().GetStatus(),
+			Status:     mStatus,
 			LastUpdate: i.getMaintenance().GetLastUpdate().String(),
 		},
 	}
