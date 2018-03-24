@@ -2,6 +2,7 @@ package prober
 
 import(
 	"errors"
+	"net"
 	"time"
 )
 
@@ -18,7 +19,7 @@ func probeGoogle(timeout string) (bool, error) {
 
 	defer conn.Close()
 
-	return true
+	return true, nil
 }
 
 func Probe(kind, target, timeout string) (bool, error) {
