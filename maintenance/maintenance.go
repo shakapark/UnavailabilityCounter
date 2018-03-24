@@ -32,7 +32,7 @@ func (m *Maintenance) String() string {
 	}else{
 		s = "Off"
 	}
-	msg := "Maintenance is " + s + "since " + m.GetLastUpdate().String()
+	msg := "Maintenance is " + s + " since " + m.GetLastUpdate().String()
 	return msg
 }
 
