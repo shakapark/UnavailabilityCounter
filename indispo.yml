@@ -1,0 +1,23 @@
+count:
+- name: pass
+  group:
+    test:
+      targets: ["192.168.2.22:80"]
+      kind: "tcp"
+    test2:
+      targets: ["github.com","hub.docker.com"]
+      kind: "http"
+    test3:
+      targets: ["youtube.fr","youtube.com"]
+      kind: "http"
+- name: pass2
+  group:
+    test4:
+      targets: ["192.168.2.22:82"]
+      kind: "tcp"
+    test5:
+      targets: ["google.com","laredoute.fr"]
+      kind: "http"
+    test6:
+      targets: ["gmail.com","facebook.com"]
+      kind: "http"
