@@ -2,13 +2,12 @@ package prober
 
 import(
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 )
 
-func ProbeHTTP(target string, timeout string) (bool, error) {
+func probeHTTP(target string, timeout string) (bool, error) {
 	if !strings.HasPrefix(target, "http://") && !strings.HasPrefix(target, "https://") {
 		target = "http://" + target
 	}

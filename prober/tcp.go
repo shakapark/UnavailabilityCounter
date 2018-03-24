@@ -1,7 +1,6 @@
 package prober
 
 import(
-	"errors"
 	"net"
 	"time"
 )
