@@ -75,6 +75,10 @@ func (is *Indispos) Add(i *Indispo) {
 	is.list = append(is.list, i)
 }
 
+func (is *Indispos) GetList() []*Indispo {
+	return is.list
+}
+
 func (is *Indispos) GetIndispo(name string) *Indispo {
 	for _, i := range is.list {
 		if i.GetName() == name {
