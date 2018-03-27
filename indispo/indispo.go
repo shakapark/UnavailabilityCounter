@@ -65,7 +65,7 @@ func (i *Indispo) DisableMaintenance() {
 	i.getMaintenance().Disable()
 }
 
-func New() *Indispos {
+func News() *Indispos {
 	return &Indispos{
 		list: []*Indispo{},
 	}

@@ -51,7 +51,7 @@ func (i *Indispo) GetStatus() (string, error) {
 func (is *Indispos) GetStatus() (string, error) {
 	
 	var tmp Jsons
-	for _, i := range is.List {
+	for _, i := range is.list {
 		j := i.toJson()
 		tmp.list = append(tmp.list, *j)
 	}
