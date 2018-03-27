@@ -53,8 +53,8 @@ func (is *Indispos) GetStatus() (string, error) {
 	var tmp Jsons
 	for _, i := range is.List {
 		j := i.toJson()
-		tmp.list = append(tmp.list, j)
+		tmp.list = append(tmp.list, *j)
 	}
-	msg, err := json.Marshal(tmp.list)
+	msg, err := json.Marshal(&tmp.list)
 	return string(msg), err
 }
