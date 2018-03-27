@@ -66,7 +66,7 @@ func (i *Indispo) DisableMaintenance() {
 }
 
 func (is *Indispos) GetIndispo(name string) *Indispo {
-	for _, i := range &is {
+	for _, i := range *is {
 		if i.GetName() == name {
 			return i
 		}
@@ -75,7 +75,7 @@ func (is *Indispos) GetIndispo(name string) *Indispo {
 }
 
 func (is *Indispos) HasMaintenancesEnable() bool {
-	for _, i := range &is {
+	for _, i := range *is {
 		if i.IsMaintenanceEnable() {
 			return true
 		}
