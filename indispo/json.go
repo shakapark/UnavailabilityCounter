@@ -58,20 +58,3 @@ func (is *Indispos) GetStatus() (string, error) {
 	msg, err := json.Marshal(tmp.list)
 	return string(msg), err
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
