@@ -15,6 +15,10 @@ type Indispo struct {
 	Maintenance    *maintenance.Maintenance
 }
 
+type Indispos struct {
+	List []*Indispo
+}
+
 func New(name string) *Indispo {
 	t := time.Now()
 	return &Indispo{
@@ -59,4 +63,22 @@ func (i *Indispo) EnableMaintenance() {
 
 func (i *Indispo) DisableMaintenance() {
 	i.getMaintenance().Disable()
+}
+
+func (is *Indispos) GetIndispo(name string) *Indispo {
+	for _, i := range is {
+		if i.GetName() == name {
+			return indispo
+		}
+	}
+	return nil
+}
+
+func (is *Indispos) HasMaintenancesEnable() bool {
+	for _, i := range is {
+		if i.IsMaintenanceEnable() {
+			return true
+		}
+	}
+	return false
 }

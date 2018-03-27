@@ -15,6 +15,10 @@ type Json struct {
 	JsonMaintenance JsonMaintenance `json:"maintenance"`
 }
 
+type Jsons struct {
+	list []Json
+}
+
 func (i *Indispo) toJson() *Json {
 	var status, mStatus string
 	if i.Progress {
@@ -41,5 +45,16 @@ func (i *Indispo) toJson() *Json {
 func (i *Indispo) GetStatus() (string, error) {
 	j := i.toJson()
 	msg, err := json.Marshal(j)
+	return string(msg), err
+}
+
+func (is *Indispos) GetStatus() (string, error) {
+	
+	var tmp Jsons
+	for _, i := range is {
+		j := i.toJson()
+		tmp.list = append(tmp.list, j)
+	}
+	msg, err := json.Marshal(tmp.list)
 	return string(msg), err
 }
