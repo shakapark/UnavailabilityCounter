@@ -16,7 +16,7 @@ type Indispo struct {
 }
 
 type Indispos struct {
-	List []*Indispo
+	list []*Indispo
 }
 
 func New(name string) *Indispo {
@@ -65,8 +65,18 @@ func (i *Indispo) DisableMaintenance() {
 	i.getMaintenance().Disable()
 }
 
+func New() *Indispos {
+	return &Indispos{
+		list: []*Indispo{},
+	}
+}
+
+func (is *Indispos) Add(i *Indispo) {
+	is.list = append(is.list, i)
+}
+
 func (is *Indispos) GetIndispo(name string) *Indispo {
-	for _, i := range is.List {
+	for _, i := range is.list {
 		if i.GetName() == name {
 			return i
 		}
@@ -75,7 +85,7 @@ func (is *Indispos) GetIndispo(name string) *Indispo {
 }
 
 func (is *Indispos) HasMaintenancesEnable() bool {
-	for _, i := range is.List {
+	for _, i := range is.list {
 		if i.IsMaintenanceEnable() {
 			return true
 		}
