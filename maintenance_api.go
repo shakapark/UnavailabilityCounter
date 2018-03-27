@@ -13,7 +13,7 @@ func maintenanceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		
-		for _, indispo := range Indispos {
+		for _, indispo := range Indispos.GetList() {
 			
 			if indispo.GetName() == query {
 				
@@ -34,16 +34,10 @@ func maintenanceHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		w.Header().Set("Content-Type", "application/json")
-		str := ""
-		for _, indispo := range Indispos {
-			tmp, err := indispo.GetStatus()
-			if err != nil {
-				log.Warnln("Error: ", err)
-			}
-			log.Debugln("Debug: "+tmp)
-			str += tmp
-		}
-		
+		str, err := Indispos.GetStatus()
+		if err != nil {
+			log.Warnln("Error: ", err)
+		}		
 		w.Write([]byte(str))
 	}
 }

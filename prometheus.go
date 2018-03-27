@@ -32,7 +32,7 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 
 		for gName, group := range instance.Groups {
 			
-			indispo := getIndispoFromName(Indispos, setInstanceName(instance.Name, gName))
+			indispo := Indispos.GetIndispo(setInstanceName(instance.Name, gName))
 			if indispo.IsMaintenanceEnable() {					//If Maintenance Enable For This Group
 				for _, address := range group.Targets {
 				

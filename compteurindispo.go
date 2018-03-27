@@ -24,7 +24,7 @@ var(
 	
 	log promlog.Logger
 	
-	Indispos []*indispo.Indispo
+	Indispos *indispo.Indispos
 	
 	configFile = kingpin.Flag("config.file", "Compteur configuration file.").Default("indispo.yml").String()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":9143").String()
@@ -35,35 +35,17 @@ func setInstanceName(instanceName, groupName string) string {
 	return instanceName+"-"+groupName
 }
 
-func getIndispoFromName(tab []*indispo.Indispo, name string) *indispo.Indispo {
-	for _, indispo := range tab {
-		if indispo.GetName() == name {
-			return indispo
-		}
-	}
-	return nil
-}
-
 func setIndispos(c *config.Config) {
 	instances := c.Counter
 	log.Debugln("Instance Count: "+strconv.FormatInt(int64(len(instances)), 10))
-	Indispos = []*indispo.Indispo{}
+	Indispos = indispo.News()
 	for _, instance := range instances {
 		for gName, _ := range instance.Groups {
 			log.Debugln("Indispo Name: "+setInstanceName(instance.Name, gName))
-			Indispos = append(Indispos, indispo.New(setInstanceName(instance.Name, gName)))
-			log.Debugln("Indispos Count: "+strconv.FormatInt(int64(len(Indispos)), 10))
+			Indispos.Add(indispo.New(setInstanceName(instance.Name, gName)))
+			log.Debugln("Indispos Count: "+strconv.FormatInt(int64(len(Indispos.GetList())), 10))
 		}
 	}
-}
-
-func hasMaintenancesEnable() bool {
-	for _, indispo := range Indispos {
-		if indispo.IsMaintenanceEnable() {
-			return true
-		}
-	}
-	return false
 }
 
 func reloadConfig(reloadCh chan<- chan error) {
@@ -104,7 +86,7 @@ func main() {
 	sc.Unlock()
 	setIndispos(conf)
 	
-	for i, indispo := range Indispos {
+	for i, indispo := range Indispos.GetList() {
 		log.Debugln("Indispo["+strconv.FormatInt(int64(i), 10)+"]: "+indispo.GetName())
 	}
 
@@ -159,7 +141,7 @@ func main() {
 			return
 		}
 
-		if !hasMaintenancesEnable(){
+		if !Indispos.HasMaintenancesEnable(){
 			reloadConfig(reloadCh)
 		}
 	})
