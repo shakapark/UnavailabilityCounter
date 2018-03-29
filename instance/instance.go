@@ -36,6 +36,12 @@ func (i *Instance) GetIndispo(name string) *indispo.Indispo {
 	return i.GetIndispos().GetIndispo(name)
 }
 
+func News() *Instances {
+	return &Instances{
+		list: []*Instance{},
+	}
+}
+
 func (is *Instances) GetList() []*Instance {
 	return is.list
 }
