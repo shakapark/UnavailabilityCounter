@@ -31,7 +31,7 @@ func (i *Instance) GetStatus() (string, error) {
 func (is *Instances) ToJson() *Jsons {
 	var list []Json
 	for _, i := range is.GetList() {
-		list = append(list, &i.toJson())
+		list = append(list, *i.toJson())
 	}
 	
 	return &Jsons{
