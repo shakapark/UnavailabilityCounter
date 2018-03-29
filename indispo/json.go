@@ -55,7 +55,7 @@ func (is *Indispos) ToJson() *Jsons {
 	}
 	
 	return &Jsons{
-		list: list,
+		List: list,
 	}
 }
 

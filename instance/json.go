@@ -35,7 +35,7 @@ func (is *Instances) ToJson() *Jsons {
 	}
 	
 	return &Jsons{
-		list: list,
+		List: list,
 	}
 }
 
