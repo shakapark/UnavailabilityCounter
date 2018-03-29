@@ -18,7 +18,7 @@ type Jsons struct {
 func (i *Instance) toJson() *Json {
 	return &Json{
 		Instance:     i.GetName(),
-		JsonIndispos: i.GetIndispos().ToJson(),
+		JsonIndispos: *i.GetIndispos().ToJson(),
 	}
 }
 
