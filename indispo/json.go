@@ -48,13 +48,19 @@ func (i *Indispo) GetStatus() (string, error) {
 	return string(msg), err
 }
 
-func (is *Indispos) GetStatus() (string, error) {
-	
-	var tmp Jsons
-	for _, i := range is.list {
-		j := i.toJson()
-		tmp.list = append(tmp.list, *j)
+func (is *Indispos) ToJson() *Jsons {
+	var list []Json
+	for _, i := range is.GetList() {
+		list = append(list, &i.toJson())
 	}
-	msg, err := json.Marshal(&tmp.list)
+	
+	return &Jsons{
+		list: list,
+	}
+}
+
+func (is *Indispos) GetStatus() (string, error) {
+	j := is.ToJson()
+	msg, err := json.Marshal(j)
 	return string(msg), err
 }
