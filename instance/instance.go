@@ -29,7 +29,7 @@ func (i *Instance) GetIndispos() *indispo.Indispos {
 }
 
 func (i *Instance) AddIndispo(name string) {
-	i.GetIndispos().Add(indispo.New(name))
+	i.GetIndispos().Add(name)
 }
 
 func (i *Instance) GetIndispo(name string) *indispo.Indispo {
