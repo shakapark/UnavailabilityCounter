@@ -16,7 +16,7 @@ type Json struct {
 }
 
 type Jsons struct {
-	list []Json
+	List []Json
 }
 
 func (i *Indispo) toJson() *Json {
