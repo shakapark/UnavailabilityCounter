@@ -16,7 +16,7 @@ type Instances struct {
 func New(name string) *Instance {
 	return &Instance{
 		name: name,
-		indispos: indispo.News()
+		indispos: indispo.News(),
 	}
 }
 
