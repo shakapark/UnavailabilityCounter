@@ -49,6 +49,10 @@ func (i *Indispo) GetName() string {
 	return i.Name
 }
 
+func (i *Indispo) IsProgress() bool {
+	return i.Progress
+}
+
 func (i *Indispo) getMaintenance() *maintenance.Maintenance {
 	return i.Maintenance
 }
@@ -71,12 +75,21 @@ func News() *Indispos {
 	}
 }
 
-func (is *Indispos) Add(i *Indispo) {
-	is.list = append(is.list, i)
+func (is *Indispos) Add(name string) {
+	is.list = append(is.list, New(name))
 }
 
 func (is *Indispos) GetList() []*Indispo {
 	return is.list
+}
+
+func (is *Indispos) IsProgress() bool {
+	for _, i := range is.list {
+		if i.Progress {
+			return true
+		}
+	}
+	return false
 }
 
 func (is *Indispos) GetIndispo(name string) *Indispo {
