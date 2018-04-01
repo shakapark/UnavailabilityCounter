@@ -14,7 +14,7 @@ import(
 	"gopkg.in/alecthomas/kingpin.v2"
 	
 	"github.com/shakapark/UnavailabilityCounter/config"
-	"github.com/shakapark/UnavailabilityCounter/indispo"
+	"github.com/shakapark/UnavailabilityCounter/instance"
 )
 
 var(
@@ -24,26 +24,20 @@ var(
 	
 	log promlog.Logger
 	
-	Indispos *indispo.Indispos
+	Instances *instance.Instances
 	
 	configFile = kingpin.Flag("config.file", "Compteur configuration file.").Default("indispo.yml").String()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":9143").String()
 	logLevel = kingpin.Flag("log.level", "Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]").Default("info").String()
 )
 
-func setInstanceName(instanceName, groupName string) string {
-	return instanceName+"-"+groupName
-}
-
-func setIndispos(c *config.Config) {
-	instances := c.Counter
-	log.Debugln("Instance Count: "+strconv.FormatInt(int64(len(instances)), 10))
-	Indispos = indispo.News()
-	for _, instance := range instances {
-		for gName, _ := range instance.Groups {
-			log.Debugln("Indispo Name: "+setInstanceName(instance.Name, gName))
-			Indispos.Add(indispo.New(setInstanceName(instance.Name, gName)))
-			log.Debugln("Indispos Count: "+strconv.FormatInt(int64(len(Indispos.GetList())), 10))
+func setInstances(c *config.Config) {
+	log.Debugln("Instance Count: "+strconv.FormatInt(int64(len(c.Counter)), 10))
+	Instances = instance.News()
+	for _, counter := range c.Counter {
+		Instances.Add(counter.Name)
+		for gName, _ := range counter.Groups {
+			Instances.GetInstance(counter.Name).AddIndispo(gName)
 		}
 	}
 }
@@ -57,12 +51,12 @@ func reloadConfig(reloadCh chan<- chan error) {
 		sc.Lock()
 		conf := sc.C
 		sc.Unlock()
-		setIndispos(conf)
+		setInstances(conf)
 	}
 }
 
 func init() {
-	prometheus.MustRegister(version.NewCollector("compteur_indispo"))
+	prometheus.MustRegister(version.NewCollector("unavailabilitycounter"))
 }
 
 func main() {
@@ -73,23 +67,18 @@ func main() {
 		log.Fatal("Error: ", err)
 	}	
 
-	log.Infoln("msg", "Starting Compteur Indispo", "version", version.Info())
-	log.Infoln("msg", "Build context", version.BuildContext())
+	log.Infoln("Msg", "Starting UnavailabilityCounter")
 
 	if err := sc.ReloadConfig(*configFile); err != nil {
 		log.Fatal("Error loading config", err)
 		os.Exit(1)
 	}
-	log.Infoln("msg", "Loaded config file")
+	log.Infoln("Msg", "Loaded config file")
 	sc.Lock()
 	conf := sc.C
 	sc.Unlock()
-	setIndispos(conf)
+	setInstances(conf)
 	
-	for i, indispo := range Indispos.GetList() {
-		log.Debugln("Indispo["+strconv.FormatInt(int64(i), 10)+"]: "+indispo.GetName())
-	}
-
 	hup := make(chan os.Signal)
 	reloadCh := make(chan chan error)
 	signal.Notify(hup, syscall.SIGHUP)
@@ -99,16 +88,16 @@ func main() {
 			select {
 			case <-hup:
 				if err := sc.ReloadConfig(*configFile); err != nil {
-					log.Infoln("msg", "Error reloading config", "err", err)
+					log.Infoln("Msg", "Error reloading config", "err", err)
 					continue
 				}
-				log.Infoln("msg", "Reloaded config file")
+				log.Infoln("Msg", "Reloaded config file")
 			case rc := <-reloadCh:
 				if err := sc.ReloadConfig(*configFile); err != nil {
-					log.Infoln("msg", "Error reloading config", "err", err)
+					log.Infoln("Msg", "Error reloading config", "err", err)
 					rc <- err
 				} else {
-					log.Infoln("msg", "Reloaded config file")
+					log.Infoln("Msg", "Reloaded config file")
 					rc <- nil
 				}
 			}
@@ -141,9 +130,14 @@ func main() {
 			return
 		}
 
-		if !Indispos.HasMaintenancesEnable(){
-			reloadConfig(reloadCh)
+		for _, i := range Instances.GetList() {
+			if i.GetIndispos().IsProgress() {
+				log.Warnln("Error, you can't reload config because unaivability is in progress.")
+				fmt.Fprintf(w, "Error, you can't reload config because unaivability is in progress.\n")
+				return
+			}
 		}
+		reloadConfig(reloadCh)
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -156,11 +150,6 @@ func main() {
 				<body>
 					<h1>Compteur d'Indisponibilite</h1>
 					<p><a href="/probe">Probe</a></p>
-					<p>
-						<form method="POST" action="/api/maintenance">
-							<input type="submit" value="MAINTENANCE">
-						</form>
-					</p>
 				</body>
 			</html>`))
 	})

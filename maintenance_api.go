@@ -1,43 +1,73 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 )
 
+type postJson struct {
+	Instance	string
+	Name		string
+	Action		string
+}
+
 func maintenanceHandler(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "POST" {
-		query := r.URL.Query().Get("indispo")
-		if query == "" {
-			http.Error(w, "indispo parameter must be specified", 400)
+	switch r.Method {
+	
+	case "POST":				
+		var js []postJson
+		bodyBytes, errio := ioutil.ReadAll(r.Body)
+		if errio != nil {
+			log.Warnln("Error: ", errio)
+			return
+		}
+		log.Debugln(string(bodyBytes))
+		err := json.Unmarshal(bodyBytes, &js)
+		if err != nil {
+			log.Warnln("Error: ", err)
 			return
 		}
 		
-		for _, indispo := range Indispos.GetList() {
+		log.Debugln(js)
+		
+		for _, j := range js {
+			log.Debugln(j.Instance)
+			log.Debugln(j.Name)
+			instance := Instances.GetInstance(j.Instance)
+			if instance == nil {
+				log.Infoln("Error: Instance "+j.Instance+" don't exist")
+				break
+			}
+			i := instance.GetIndispos().GetIndispo(j.Name)
+			if i == nil {
+				log.Infoln("Error: Indispo "+j.Name+" don't exist")
+				break
+			}
 			
-			if indispo.GetName() == query {
-				
-				if indispo.IsMaintenanceEnable() {
-					indispo.DisableMaintenance()
-				}else{
-					indispo.EnableMaintenance()
-				}
-				http.Redirect(w, r, "/api/maintenance", 301)
-				return
+			if j.Action == "enable" {
+				i.EnableMaintenance()
+				log.Infoln("Maintenance has been enable for "+j.Name)
+			}else if j.Action == "disable" {
+				i.DisableMaintenance()
+				log.Infoln("Maintenance has been disable for "+j.Name)
+			}else{
+				log.Infoln("Error: "+j.Action+" is not a valid action (action: [enable|disable])")
+				break
 			}
 		}
-		
-		log.Warnln("Error: "+query+" not found")
-		http.Redirect(w, r, "/api/maintenance", 301)
-		return
-	}
 
-	if r.Method == "GET" {
+	case "GET":
 		w.Header().Set("Content-Type", "application/json")
-		str, err := Indispos.GetStatus()
+		str, err := Instances.GetStatus()
 		if err != nil {
 			log.Warnln("Error: ", err)
-		}		
+			return
+		}
 		w.Write([]byte(str))
+
+	default:
+		log.Infoln("Error: ", r.Method, " is not a valid method (method: [GET|POST])")	
 	}
 }
