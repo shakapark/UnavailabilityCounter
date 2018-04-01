@@ -29,10 +29,10 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 
 	for _, instance := range c.instances {
 
-
+		log.Debugln("Instance: "+instance.Name)
 		for gName, group := range instance.Groups {
-			
-			indispo := Indispos.GetIndispo(setInstanceName(instance.Name, gName))
+			log.Debugln("Instance: "+instance.Name+"/Group: "+gName)
+			indispo := Instances.GetInstance(instance.Name).GetIndispos().GetIndispo(gName)
 			if indispo.IsMaintenanceEnable() {					//If Maintenance Enable For This Group
 				for _, address := range group.Targets {
 				
@@ -41,13 +41,13 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 						prometheus.GaugeValue,
 						float64(1),
 						address)
-							  
-					ch <- prometheus.MustNewConstMetric(
-						prometheus.NewDesc("maintenance", "Displays whether or not the probe was a success", []string{"name"}, nil),
-						prometheus.GaugeValue,
-						float64(1),
-						setInstanceName(instance.Name, gName))
 				}
+				
+				ch <- prometheus.MustNewConstMetric(
+					prometheus.NewDesc("maintenance", "Displays whether or not the maintenance was enable", []string{"instance_name","group_name"}, nil),
+					prometheus.GaugeValue,
+					float64(1),
+					instance.Name, gName)
 			} else {											//If Maintenance Disable For This Group
 			
 				if group.Timeout == "" {
@@ -69,13 +69,13 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 						prometheus.GaugeValue,
 						float64(b2i(success)),
 						address)
-							  
-					ch <- prometheus.MustNewConstMetric(
-						prometheus.NewDesc("maintenance", "Displays whether or not the probe was a success", []string{"name"}, nil),
-						prometheus.GaugeValue,
-						float64(0),
-						setInstanceName(instance.Name, gName))
 				}
+				
+				ch <- prometheus.MustNewConstMetric(
+					prometheus.NewDesc("maintenance", "Displays whether or not the maintenance was enable", []string{"instance_name","group_name"}, nil),
+					prometheus.GaugeValue,
+					float64(0),
+					instance.Name, gName)
 			}
 			
 			//register(groupSuccess, instance.Name, gName)
@@ -85,13 +85,16 @@ func (c collector) Collect(ch chan<- prometheus.Metric){
 }
 
 func probeHandler(w http.ResponseWriter, r *http.Request, c *config.Config) {
-
+	
+	log.Debugln("Start Handler Function")
 	registry := prometheus.NewRegistry()
 	instances := c.Counter   				//instances:[]Instance
 	
+	log.Debugln("Lunch Collector")
 	collector := collector{instances: instances}
 	registry.MustRegister(collector)
-
+	
+	log.Debugln("Show Result")
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
 }
