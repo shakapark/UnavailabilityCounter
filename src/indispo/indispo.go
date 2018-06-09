@@ -3,7 +3,7 @@ package indispo
 import (
 	"time"
 
-	"UnavailabilityCounter/maintenance"
+	"UnavailabilityCounter/src/maintenance"
 )
 
 //Indispo Represent Unavailability of a target

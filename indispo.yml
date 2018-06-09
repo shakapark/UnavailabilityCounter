@@ -1,23 +1,23 @@
 count:
-- name: pass
+- name: instance_name
   group:
-    test:
-      targets: ["192.168.2.22:80"]
+    group_name:
+      targets: ["ip:port",...]
       kind: "tcp"
-    test2:
-      targets: ["github.com","hub.docker.com"]
+    group_name:
+      targets: ["https://url","url",...]
       kind: "http"
-    test3:
-      targets: ["youtube.fr","youtube.com"]
+    group_name:
+      targets: ["https://url","url",...]
       kind: "http"
-- name: pass2
+- name: instance_name
   group:
-    test4:
-      targets: ["192.168.2.22:82"]
+    group_name:
+      targets: ["ip:port",...]
       kind: "tcp"
-    test5:
-      targets: ["google.com","laredoute.fr"]
+    group_name:
+      targets: ["https://url","url",...]
       kind: "http"
-    test6:
-      targets: ["gmail.com","facebook.com"]
+    group_name:
+      targets: ["https://url","url",...]
       kind: "http"

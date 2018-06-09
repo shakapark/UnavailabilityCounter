@@ -1,7 +1,7 @@
 package instance
 
 import (
-	"UnavailabilityCounter/indispo"
+	"UnavailabilityCounter/src/indispo"
 	"encoding/json"
 )
 

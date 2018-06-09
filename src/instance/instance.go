@@ -1,7 +1,7 @@
 package instance
 
 import (
-	"UnavailabilityCounter/indispo"
+	"UnavailabilityCounter/src/indispo"
 )
 
 //Instance Represent an instance with a name and an indispos ([]indispo)

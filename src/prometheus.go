@@ -6,8 +6,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"UnavailabilityCounter/config"
-	"UnavailabilityCounter/prober"
+	"UnavailabilityCounter/src/config"
+	"UnavailabilityCounter/src/prober"
 )
 
 type collector struct {
