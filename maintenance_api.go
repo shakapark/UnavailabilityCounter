@@ -6,18 +6,18 @@ import (
 	"net/http"
 )
 
-type postJson struct {
-	Instance	string
-	Name		string
-	Action		string
+type postJSON struct {
+	Instance string
+	Name     string
+	Action   string
 }
 
 func maintenanceHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
-	
-	case "POST":				
-		var js []postJson
+
+	case "POST":
+		var js []postJSON
 		bodyBytes, errio := ioutil.ReadAll(r.Body)
 		if errio != nil {
 			log.Warnln("Error: ", errio)
@@ -29,31 +29,31 @@ func maintenanceHandler(w http.ResponseWriter, r *http.Request) {
 			log.Warnln("Error: ", err)
 			return
 		}
-		
+
 		log.Debugln(js)
-		
+
 		for _, j := range js {
 			log.Debugln(j.Instance)
 			log.Debugln(j.Name)
 			instance := Instances.GetInstance(j.Instance)
 			if instance == nil {
-				log.Infoln("Error: Instance "+j.Instance+" don't exist")
+				log.Infoln("Error: Instance " + j.Instance + " don't exist")
 				break
 			}
 			i := instance.GetIndispos().GetIndispo(j.Name)
 			if i == nil {
-				log.Infoln("Error: Indispo "+j.Name+" don't exist")
+				log.Infoln("Error: Indispo " + j.Name + " don't exist")
 				break
 			}
-			
+
 			if j.Action == "enable" {
 				i.EnableMaintenance()
-				log.Infoln("Maintenance has been enable for "+j.Name)
-			}else if j.Action == "disable" {
+				log.Infoln("Maintenance has been enable for " + j.Name)
+			} else if j.Action == "disable" {
 				i.DisableMaintenance()
-				log.Infoln("Maintenance has been disable for "+j.Name)
-			}else{
-				log.Infoln("Error: "+j.Action+" is not a valid action (action: [enable|disable])")
+				log.Infoln("Maintenance has been disable for " + j.Name)
+			} else {
+				log.Infoln("Error: " + j.Action + " is not a valid action (action: [enable|disable])")
 				break
 			}
 		}
@@ -68,6 +68,6 @@ func maintenanceHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(str))
 
 	default:
-		log.Infoln("Error: ", r.Method, " is not a valid method (method: [GET|POST])")	
+		log.Infoln("Error: ", r.Method, " is not a valid method (method: [GET|POST])")
 	}
 }

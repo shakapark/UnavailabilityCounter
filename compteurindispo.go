@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	"fmt"
 	"net/http"
 	"os"
@@ -11,32 +11,34 @@ import(
 	"github.com/prometheus/client_golang/prometheus"
 	promlog "github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
+	//"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
-	
-	"github.com/shakapark/UnavailabilityCounter/config"
-	"github.com/shakapark/UnavailabilityCounter/instance"
+
+	"UnavailabilityCounter/config"
+	"UnavailabilityCounter/instance"
 )
 
-var(
+var (
 	sc = config.SafeConfig{
 		C: &config.Config{},
 	}
-	
+
 	log promlog.Logger
-	
+
+	//Instances Variables that contains the list of instance
 	Instances *instance.Instances
-	
-	configFile = kingpin.Flag("config.file", "Compteur configuration file.").Default("indispo.yml").String()
+
+	configFile    = kingpin.Flag("config.file", "Compteur configuration file.").Default("indispo.yml").String()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":9143").String()
-	logLevel = kingpin.Flag("log.level", "Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]").Default("info").String()
+	logLevel      = kingpin.Flag("log.level", "Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]").Default("info").String()
 )
 
 func setInstances(c *config.Config) {
-	log.Debugln("Instance Count: "+strconv.FormatInt(int64(len(c.Counter)), 10))
+	log.Debugln("Instance Count: " + strconv.FormatInt(int64(len(c.Counter)), 10))
 	Instances = instance.News()
 	for _, counter := range c.Counter {
 		Instances.Add(counter.Name)
-		for gName, _ := range counter.Groups {
+		for gName := range counter.Groups {
 			Instances.GetInstance(counter.Name).AddIndispo(gName)
 		}
 	}
@@ -47,7 +49,7 @@ func reloadConfig(reloadCh chan<- chan error) {
 	reloadCh <- rc
 	if err := <-rc; err != nil {
 		log.Errorln("Error: failed to reload config: %s", err)
-	}else{
+	} else {
 		sc.Lock()
 		conf := sc.C
 		sc.Unlock()
@@ -65,7 +67,7 @@ func main() {
 	log = promlog.Base()
 	if err := log.SetLevel(*logLevel); err != nil {
 		log.Fatal("Error: ", err)
-	}	
+	}
 
 	log.Infoln("Msg", "Starting UnavailabilityCounter")
 
@@ -78,11 +80,11 @@ func main() {
 	conf := sc.C
 	sc.Unlock()
 	setInstances(conf)
-	
+
 	hup := make(chan os.Signal)
 	reloadCh := make(chan chan error)
 	signal.Notify(hup, syscall.SIGHUP)
-	
+
 	go func() {
 		for {
 			select {
@@ -103,18 +105,18 @@ func main() {
 			}
 		}
 	}()
-	
+
 	http.HandleFunc("/probe", func(w http.ResponseWriter, r *http.Request) {
 		sc.Lock()
 		conf := sc.C
 		sc.Unlock()
 		probeHandler(w, r, conf)
 	})
-	
+
 	http.HandleFunc("/api/maintenance", func(w http.ResponseWriter, r *http.Request) {
 		maintenanceHandler(w, r)
 	})
-	
+
 	/*http.HandleFunc("/api/v1/query_range", func(w http.ResponseWriter, r *http.Request) {
 		queryRangeHandler(w, r)
 	})
