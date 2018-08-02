@@ -14,6 +14,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"UnavailabilityCounter/src/config"
+	"UnavailabilityCounter/src/grafana"
 	"UnavailabilityCounter/src/instance"
 )
 
@@ -43,7 +44,8 @@ func setInstances(c *config.Config) {
 	}
 }
 
-func reloadConfig(reloadCh chan<- chan error) {
+
+	//func reloadConfig(reloadCh chan<- chan error) {
 	rc := make(chan error)
 	reloadCh <- rc
 	if err := <-rc; err != nil {
@@ -117,11 +119,11 @@ func main() {
 	})
 
 	/*http.HandleFunc("/api/v1/query_range", func(w http.ResponseWriter, r *http.Request) {
-		queryRangeHandler(w, r)
+		grafana.queryRangeHandler(w, r)
 	})
 
 	http.HandleFunc("/api/v1/label/__name__/values", func(w http.ResponseWriter, r *http.Request) {
-		checkAPI(w, r)
+		grafana.checkAPI(w, r)
 	})*/
 
 	http.HandleFunc("/-/reload", func(w http.ResponseWriter, r *http.Request) {
